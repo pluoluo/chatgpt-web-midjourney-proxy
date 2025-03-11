@@ -228,7 +228,7 @@ export const viggleProxyFileDo= async( req:Request, res:Response, next?:NextFunc
     
 }
 
-export const sunoProxy=proxy(process.env.SUNO_SERVER??  API_BASE_URL, {
+export const sunoProxy=proxy(process.env.SUNO_SERVER || API_BASE_URL || 'https://api.openai.com', {
   https: false, limit: '10mb',
   proxyReqPathResolver: function (req) {
     return req.originalUrl.replace('/sunoapi', '') // 将URL中的 `/openapi` 替换为空字符串

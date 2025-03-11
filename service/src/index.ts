@@ -18,6 +18,7 @@ import axios from 'axios';
 import AWS  from 'aws-sdk';
 import { v4 as uuidv4} from 'uuid';
 import { viggleProxyFileDo,viggleProxy, lumaProxy, runwayProxy, ideoProxy, ideoProxyFileDo, klingProxy, pikaProxy, udioProxy, runwaymlProxy, pixverseProxy, sunoProxy } from './myfun'
+import { aliyunProxy } from './middleware/aliyunProxy'
 
 
 const app = express()
@@ -32,7 +33,8 @@ app.use(express.static('public' ,{
 //app.use(express.json())
 app.use(bodyParser.json({ limit: '10mb' })); //大文件传输
 
-
+// 添加阿里云API代理中间件
+app.use(aliyunProxy);
 
 app.all('*', (_, res, next) => {
   res.header('Access-Control-Allow-Origin', '*')

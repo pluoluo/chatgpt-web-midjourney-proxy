@@ -2,27 +2,38 @@
 import { NInput, NButton, useMessage,NSwitch } from "naive-ui" //NInfiniteScroll
  
 import {gptServerStore} from '@/store'
-import { mlog, myTrim,blurClean} from "@/api";
+import { blurClean} from "@/api";
 import { t } from '@/locales'
 import {  watch } from "vue";
+import { validateAliyunApiKey } from '@/api/aliyunValidation';
 
 const emit= defineEmits(['close']);
 const ms= useMessage();
-const save = ()=>{
+const save = async ()=>{
+    // 检查是否设置了阿里云API密钥
+    if(!gptServerStore.myData.ALIYUN_API_KEY) {
+        ms.error('请设置阿里云API密钥');
+        return;
+    }
+
+    // 验证API密钥格式
+    if(!/^sk-[a-zA-Z0-9]{32}$/.test(gptServerStore.myData.ALIYUN_API_KEY)) {
+        ms.error('阿里云API密钥格式不正确，请输入以sk-开头的32位字符API密钥');
+        return;
+    }
+
+    // 验证API密钥有效性
+    const validationResult = await validateAliyunApiKey();
+    if (!validationResult.isValid) {
+        ms.error(validationResult.message);
+        return;
+    }
+
     gptServerStore.setMyData( gptServerStore.myData );
     ms.success( t('mjchat.success'));
     emit('close');
 }
-// const blurClean= ()=>{
-//   mlog('blurClean');
-//   gptServerStore.myData.OPENAI_API_BASE_URL =myTrim( myTrim(gptServerStore.myData.OPENAI_API_BASE_URL.trim(),'/'), '\\' );
-//   gptServerStore.myData.OPENAI_API_KEY = gptServerStore.myData.OPENAI_API_KEY.trim();
-//   gptServerStore.myData.MJ_SERVER =myTrim( myTrim( gptServerStore.myData.MJ_SERVER.trim(),'/'),'\\');
-//   gptServerStore.myData.MJ_API_SECRET = gptServerStore.myData.MJ_API_SECRET.trim();
-//   gptServerStore.myData.UPLOADER_URL=  myTrim( myTrim( gptServerStore.myData.UPLOADER_URL.trim(),'/'),'\\');
-// }
 
-//const isSync= computed(()=>gptServerStore.myData.IS_SET_SYNC )
 watch(() => gptServerStore.myData.OPENAI_API_BASE_URL , (n)=>{
    if(!gptServerStore.myData.IS_SET_SYNC) return  ;
     gptServerStore.myData.MJ_SERVER= n
@@ -35,6 +46,7 @@ watch(() => gptServerStore.myData.OPENAI_API_BASE_URL , (n)=>{
     gptServerStore.myData.PIKA_SERVER=n;
     gptServerStore.myData.PIXVERSE_SERVER=n;
     gptServerStore.myData.UDIO_SERVER=n;
+    gptServerStore.myData.ALIYUN_SERVER=n;
 });
 watch(() => gptServerStore.myData.OPENAI_API_KEY , (n)=>{
     if(!gptServerStore.myData.IS_SET_SYNC) return  ;
@@ -48,6 +60,7 @@ watch(() => gptServerStore.myData.OPENAI_API_KEY , (n)=>{
     gptServerStore.myData.PIKA_KEY=n;
     gptServerStore.myData.PIXVERSE_KEY=n;
     gptServerStore.myData.UDIO_KEY=n;
+    gptServerStore.myData.ALIYUN_API_KEY=n;
 });
 </script>
 <template>
@@ -116,7 +129,22 @@ watch(() => gptServerStore.myData.OPENAI_API_KEY , (n)=>{
           </n-input>
       </section>
 
+      <div class="text-right">{{$t('阿里云相关')}}</div>
+      <section class="mb-4 flex justify-between items-center"  >
+          <n-input @blur="blurClean"  :placeholder="$t('mj.setOpenPlaceholder') " v-model:value="gptServerStore.myData.ALIYUN_SERVER" clearable>
+            <template #prefix>
+              <span class="text-[var(--n-tab-text-color-active)]">{{$t('阿里云接口地址')}}:</span>
+            </template>
+          </n-input>
+      </section>
 
+      <section class="mb-4 flex justify-between items-center"  >
+          <n-input  @blur="blurClean" type="password"  :placeholder="$t('mj.aliyunkeyPlaceholder')" show-password-on="click" v-model:value="gptServerStore.myData.ALIYUN_API_KEY" clearable>
+            <template #prefix>
+              <span class="text-[var(--n-tab-text-color-active)]">Aliyun Key:</span>
+            </template>
+          </n-input>
+      </section>
 
       <div class="text-right">{{$t('suno.serverabout')}}</div>
       <section class="mb-4 flex justify-between items-center"  >

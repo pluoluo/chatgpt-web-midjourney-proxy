@@ -4,6 +4,9 @@ interface SendResponseOptions<T = any> {
   data?: T
 }
 
+// 导出mlog函数
+export { mlog } from './mlog'
+
 export function sendResponse<T>(options: SendResponseOptions<T>) {
   if (options.type === 'Success') {
     return Promise.resolve({

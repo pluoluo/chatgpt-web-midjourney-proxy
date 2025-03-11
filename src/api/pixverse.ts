@@ -12,6 +12,7 @@ function getHeaderAuthorization(){
     if( homeStore.myData.vtoken ){
         const  vtokenh={ 'x-vtoken':  homeStore.myData.vtoken ,'x-ctoken':  homeStore.myData.ctoken};
         headers= {...headers, ...vtokenh}
+        console.log('添加vtoken头部:', vtokenh)
     }
     if(!gptServerStore.myData.KLING_KEY){ 
         const authStore = useAuthStore()
@@ -26,6 +27,7 @@ function getHeaderAuthorization(){
         'Authorization': 'Bearer ' +gptServerStore.myData.PIXVERSE_KEY
     }
     headers= {...headers, ...bmi }
+    console.log('最终请求头:', headers)
     return headers
 }
 

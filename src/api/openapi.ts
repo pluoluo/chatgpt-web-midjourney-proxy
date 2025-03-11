@@ -1,4 +1,3 @@
-
 import { gptConfigStore, gptServerStore, homeStore,useAuthStore } from "@/store";
 import { mlog,myTrim } from "./mjapi";
 import { fetchSSE } from "./sse/fetchsse";
@@ -11,6 +10,7 @@ import { chatSetting } from "./chat";
 import { MessageApiInjection } from "naive-ui/es/message/src/MessageProvider";
 import { ideoSubmit } from "./ideo";
 import { error } from "console";
+import { generateImage } from "./aliyun";
 //import {encode,  encodeChat}  from "gpt-tokenizer"
 //import {encode,  encodeChat} from "gpt-tokenizer/cjs/encoding/cl100k_base.js";
 //import { get_encoding } from '@dqbd/tiktoken'
@@ -228,8 +228,19 @@ export const whisperUpload = ( FormData:FormData )=>{
 export const subGPT= async (data:any, chat:Chat.Chat )=>{
    let d:any;
    let action= data.action;
-   //chat.myid=  `${Date.now()}`;
-   if(  action=='gpt.dall-e-3' && data.data && data.data.model && data.data.model.indexOf('ideogram')>-1 ){ //ideogram
+   if(  action=='gpt.dall-e-3' && data.data && data.data.model === 'pollinations' ){ //Pollinations API
+         mlog("Pollinations URL生成 ", data.data)
+         try{
+            chat.text = data.data.prompt;
+            chat.opt = {imageUrl: data.data.imageUrl};
+            chat.loading = false;
+            homeStore.setMyData({act:'updateChat', actData:chat});
+         }catch(e){
+            chat.text='失败！'+"\n```json\n"+   e  +"\n```\n";
+            chat.loading=false;
+            homeStore.setMyData({act:'updateChat', actData:chat});
+         }
+   }else if(  action=='gpt.dall-e-3' && data.data && data.data.model && data.data.model.indexOf('ideogram')>-1 ){ //ideogram
          mlog("ddlog 数据 ", data.data  )
          try{
             let d= await ideoSubmit(data.data );
@@ -241,10 +252,41 @@ export const subGPT= async (data:any, chat:Chat.Chat )=>{
             homeStore.setMyData({act:'updateChat', actData:chat });
 
          }catch(e){
-            //chat.text='失败！'+"\n```json\n"+JSON.stringify(d, null, 2)+"\n```\n";
             chat.text='失败！'+"\n```json\n"+   e  +"\n```\n";
             chat.loading=false;
             homeStore.setMyData({act:'updateChat', actData:chat });
+         }
+   }else if(  action=='gpt.dall-e-3' && data.data && data.data.model && (data.data.model.indexOf('flux')>-1 || data.data.model.indexOf('wanx')>-1 || data.data.model.indexOf('stable-diffusion')>-1) ){ //阿里云API
+         mlog("阿里云API调用 ", data.data)
+         try{
+            const result = await generateImage({
+                model: data.data.model,
+                prompt: data.data.prompt,
+                negativePrompt: data.data.negative_prompt,
+                n: data.data.n,
+                size: data.data.size,
+                steps: data.data.steps,
+                seed: data.data.seed,
+                cfgScale: data.data.cfg_scale,
+                style: data.data.style,
+                refImage: data.data.ref_image,
+                refMode: data.data.ref_mode,
+                refStrength: data.data.ref_strength
+            });
+            
+            if(result.success) {
+                const image = result.images[0];
+                chat.text = image.prompt;
+                chat.opt = {imageUrl: image.url};
+                chat.loading = false;
+                homeStore.setMyData({act:'updateChat', actData:chat});
+            } else {
+                throw new Error(result.error);
+            }
+         }catch(e){
+            chat.text='失败！'+"\n```json\n"+   e  +"\n```\n";
+            chat.loading=false;
+            homeStore.setMyData({act:'updateChat', actData:chat});
          }
    }else if(  action=='gpt.dall-e-3' ){ //执行变化
        // chat.model= 'dall-e-3';
@@ -271,9 +313,11 @@ export const subGPT= async (data:any, chat:Chat.Chat )=>{
 export const isDallImageModel =(model:string|undefined)=>{
     if(!model) return false;
     if( model.indexOf('flux')>-1 ) return true; 
-    if( model.indexOf('ideogram')>-1 ) return true; 
+    if( model.indexOf('ideogram')>-1 ) return true;
+    if( model.indexOf('wanx')>-1 ) return true;
+    if( model.indexOf('stable-diffusion')>-1 ) return true;
+    if( model.indexOf('pollinations')>-1 ) return true;
     return ['dall-e-2' ,'dall-e-3','ideogram' ].indexOf(model)>-1
-      
 }
 
 interface subModelType{
@@ -542,8 +586,7 @@ export const openaiSetting= ( q:any,ms:MessageApiInjection )=>{
                 PIKA_SERVER:url,
                 UDIO_SERVER:url,
                 PIXVERSE_SERVER:url,
-                
-                
+                ALIYUN_SERVER:url,
                 
                 OPENAI_API_KEY:key,
                 MJ_API_SECRET:key, 
@@ -556,6 +599,7 @@ export const openaiSetting= ( q:any,ms:MessageApiInjection )=>{
                 PIKA_KEY:key,
                 UDIO_KEY:key,
                 PIXVERSE_KEY:key,
+                ALIYUN_API_KEY:key,
              } )
             blurClean();
             gptServerStore.setMyData( gptServerStore.myData );

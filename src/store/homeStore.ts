@@ -118,6 +118,8 @@ export interface gptServerType{
     UDIO_KEY:string
     PIXVERSE_SERVER:string
     PIXVERSE_KEY:string
+    ALIYUN_SERVER:string
+    ALIYUN_API_KEY:string
     IS_SET_SYNC?:boolean
     GPTS_GX?:boolean
     IS_LUMA_PRO?:boolean
@@ -130,7 +132,6 @@ export interface gptServerType{
     REALTIME_MODEL?:string
     REALTIME_IS_WHISPER?:boolean 
     TAB_MUSIC?:string
-
 }
 
 const  getServerDefault=()=>{
@@ -161,7 +162,9 @@ let v:gptServerType={
         UDIO_SERVER:'',
         UDIO_KEY:'',
         PIXVERSE_SERVER:'',
-        PIXVERSE_KEY:''
+        PIXVERSE_KEY:'',
+        ALIYUN_SERVER:'',
+        ALIYUN_API_KEY:''
     }
     return v ;
 }
